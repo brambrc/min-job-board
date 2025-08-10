@@ -56,30 +56,33 @@ export default function DashboardPage() {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
+      // First get the saved job IDs
+      const { data: savedJobIds, error: savedError } = await supabase
         .from('saved_jobs')
-        .select(`
-          job_id,
-          jobs (
-            id,
-            title,
-            company,
-            description,
-            location,
-            job_type,
-            user_id,
-            created_at,
-            updated_at
-          )
-        `)
+        .select('job_id')
         .eq('user_id', user.id)
 
-      if (error) {
-        console.error('Error fetching saved jobs:', error)
+      if (savedError) {
+        console.error('Error fetching saved job IDs:', savedError)
+        return
+      }
+
+      if (!savedJobIds || savedJobIds.length === 0) {
+        setSavedJobs([])
+        return
+      }
+
+      // Then get the job details
+      const jobIds = savedJobIds.map(item => item.job_id)
+      const { data: jobs, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .in('id', jobIds)
+
+      if (jobsError) {
+        console.error('Error fetching saved jobs details:', jobsError)
       } else {
-        // Extract the jobs from the nested structure
-        const jobsData = data?.map(item => item.jobs).filter(Boolean) as Job[] || []
-        setSavedJobs(jobsData)
+        setSavedJobs(jobs || [])
       }
     } catch (error) {
       console.error('Unexpected error:', error)
@@ -301,7 +304,7 @@ export default function DashboardPage() {
                   <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No saved jobs yet</h3>
                   <p className="text-gray-600 mb-6">
-                    Browse jobs and save the ones you're interested in to view them here.
+                    Browse jobs and save the ones you&apos;re interested in to view them here.
                   </p>
                   <Link
                     href="/jobs"

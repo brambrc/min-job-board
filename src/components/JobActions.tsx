@@ -27,7 +27,7 @@ export default function JobActions({ jobId, jobTitle, company }: JobActionsProps
       }
 
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('saved_jobs')
           .select('id')
           .eq('user_id', user.id)
@@ -37,7 +37,7 @@ export default function JobActions({ jobId, jobTitle, company }: JobActionsProps
         if (data) {
           setIsSaved(true)
         }
-      } catch (error) {
+      } catch {
         // Job is not saved (expected for new jobs)
       } finally {
         setCheckingStatus(false)
